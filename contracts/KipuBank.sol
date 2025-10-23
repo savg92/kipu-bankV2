@@ -25,18 +25,6 @@ contract KipuBank {
     /// @notice Total deposits in bank
     uint256 public totalDeposits;
 
-    // ========== EVENTS ==========
-
-    /// @notice Emitted on successful deposit
-    /// @param user Depositor address
-    /// @param amount ETH deposited
-    event DepositMade(address indexed user, uint256 amount);
-
-    /// @notice Emitted on successful withdrawal
-    /// @param user Withdrawer address
-    /// @param amount ETH withdrawn
-    event WithdrawalMade(address indexed user, uint256 amount);
-
     // ========== CUSTOM ERRORS ==========
 
     /// @notice Deposit exceeds bank cap
@@ -62,6 +50,18 @@ contract KipuBank {
 
     /// @notice Zero withdrawal amount
     error ZeroWithdrawalAmount();
+
+    // ========== EVENTS ==========
+
+    /// @notice Emitted on successful deposit
+    /// @param user Depositor address
+    /// @param amount ETH deposited
+    event DepositMade(address indexed user, uint256 amount);
+
+    /// @notice Emitted on successful withdrawal
+    /// @param user Withdrawer address
+    /// @param amount ETH withdrawn
+    event WithdrawalMade(address indexed user, uint256 amount);
 
     // ========== MODIFIERS ==========
 
