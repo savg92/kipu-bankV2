@@ -42,7 +42,7 @@
   - ETH deposit: ~110k gas average
   - ETH withdrawal: ~50k gas average
 
-### Phase 4: Deployment Preparation (In Progress)
+### Phase 4: Deployment to Sepolia ✅ COMPLETE
 - ✅ Deployment script created: `script/DeployKipuBankV2.s.sol`
 - ✅ Foundry configured for Sepolia network
 - ✅ Deployment parameters defined:
@@ -50,26 +50,21 @@
   - Max withdrawal: 1 ETH
   - Chainlink ETH/USD feed: 0x694AA1769357215DE4FAC081bf1f309aDC325306
 - ✅ Script tested successfully (dry run, 2.2M gas)
-- ⏳ **NEXT STEP:** Deploy to Sepolia testnet
+- ✅ **Deployed to Sepolia successfully!**
+- ✅ Contract address: `0xe1b858d11bbbd3565a883a83352521765645b19f`
+- ✅ Contract verified on Etherscan
+- ✅ Transaction hash: `0xc172a48c046535f51c3e92698e0e4024c53b20c998f9206b239935372dc5d38c`
 
 ---
 
 ## 🎯 Next Steps
 
-### Immediate: Deploy to Sepolia
+### ✅ Deployment Complete!
 
-1. **Verify wallet has Sepolia ETH:**
-   ```bash
-   # Check balance at deployer address
-   cast balance 0xA8760074fc8671c2f2c3E2EAdD1595b88BacE195 --rpc-url sepolia
-   ```
+**Deployed Contract:** `0xe1b858d11bbbd3565a883a83352521765645b19f`  
+**Etherscan:** https://sepolia.etherscan.io/address/0xe1b858d11bbbd3565a883a83352521765645b19f
 
-2. **Deploy contract with verification:**
-   ```bash
-   forge script script/DeployKipuBankV2.s.sol --rpc-url sepolia --broadcast --verify
-   ```
-
-3. **Save deployed address** and verify on Etherscan
+### Immediate: Post-Deployment Testing & Documentation
 
 ### Post-Deployment Tasks
 
