@@ -5,7 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 /// @title KipuBankV2
 /// @notice Production-grade multi-token vault with Chainlink price oracles
@@ -30,13 +30,13 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
 
     /// @notice USDC decimal places (standard for USD accounting)
     uint8 private constant USDC_DECIMALS = 6;
-    
+
     /// @notice ETH decimal places
     uint8 private constant ETH_DECIMALS = 18;
-    
+
     /// @notice Chainlink price feed decimal places
     uint8 private constant CHAINLINK_DECIMALS = 8;
-    
+
     /// @notice Address representation for native ETH
     address private constant ETH_ADDRESS = address(0);
 
@@ -202,13 +202,10 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @dev Uses CEI pattern and ReentrancyGuard
     /// @param token Token address (use address(0) for ETH)
     /// @param amount Token amount to deposit (must match msg.value for ETH)
-    function deposit(address token, uint256 amount)
-        external
-        payable
-        nonReentrant
-        supportedToken(token)
-        whenNotPaused
-    {
+    function deposit(
+        address token,
+        uint256 amount
+    ) external payable nonReentrant supportedToken(token) whenNotPaused {
         if (amount == 0) revert ZeroDepositAmount();
 
         // Calculate USD value and check bank cap
@@ -237,11 +234,10 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @dev Uses CEI pattern and ReentrancyGuard
     /// @param token Token address (use address(0) for ETH)
     /// @param amount Token amount to withdraw
-    function withdraw(address token, uint256 amount)
-        external
-        nonReentrant
-        supportedToken(token)
-    {
+    function withdraw(
+        address token,
+        uint256 amount
+    ) external nonReentrant supportedToken(token) {
         // Cache storage read
         uint256 userBalance = balances[msg.sender][token];
 
@@ -274,11 +270,10 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @param user Address to query
     /// @param token Token address
     /// @return User's token balance
-    function getVaultBalance(address user, address token)
-        external
-        view
-        returns (uint256)
-    {
+    function getVaultBalance(
+        address user,
+        address token
+    ) external view returns (uint256) {
         return balances[user][token];
     }
 
@@ -286,11 +281,10 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @param user Address to query
     /// @param token Token address
     /// @return User's balance in USD (6 decimals)
-    function getVaultBalanceInUSD(address user, address token)
-        external
-        view
-        returns (uint256)
-    {
+    function getVaultBalanceInUSD(
+        address user,
+        address token
+    ) external view returns (uint256) {
         uint256 balance = balances[user][token];
         if (balance == 0) return 0;
         return getTokenValueInUSD(token, balance);
@@ -392,34 +386,31 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @notice Get ETH value in USD
     /// @param ethAmount Amount of ETH (18 decimals)
     /// @return USD value (6 decimals)
-    function getETHValueInUSD(uint256 ethAmount)
-        public
-        view
-        returns (uint256)
-    {
+    function getETHValueInUSD(uint256 ethAmount) public view returns (uint256) {
         int256 ethUsdPrice = getLatestETHPrice(); // 8 decimals
         uint256 normalizedETH = normalizeToUSDC(ethAmount, ETH_DECIMALS);
 
         // ethUsdPrice has 8 decimals, normalize result to USDC decimals
-        return (normalizedETH * uint256(ethUsdPrice)) / (10 ** CHAINLINK_DECIMALS);
+        return
+            (normalizedETH * uint256(ethUsdPrice)) / (10 ** CHAINLINK_DECIMALS);
     }
 
     /// @notice Get token value in USD
     /// @param token Token address (address(0) for ETH)
     /// @param amount Token amount
     /// @return USD value (6 decimals)
-    function getTokenValueInUSD(address token, uint256 amount)
-        public
-        view
-        supportedToken(token)
-        returns (uint256)
-    {
+    function getTokenValueInUSD(
+        address token,
+        uint256 amount
+    ) public view supportedToken(token) returns (uint256) {
         if (token == ETH_ADDRESS) {
             return getETHValueInUSD(amount);
         }
 
         TokenInfo memory tokenInfo = supportedTokens[token];
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(tokenInfo.priceFeed);
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            tokenInfo.priceFeed
+        );
 
         (
             uint80 roundId,
@@ -441,11 +432,10 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @param amount Token amount
     /// @param tokenDecimals Token decimals
     /// @return Normalized amount (6 decimals)
-    function normalizeToUSDC(uint256 amount, uint8 tokenDecimals)
-        public
-        pure
-        returns (uint256)
-    {
+    function normalizeToUSDC(
+        uint256 amount,
+        uint8 tokenDecimals
+    ) public pure returns (uint256) {
         if (tokenDecimals > USDC_DECIMALS) {
             return amount / (10 ** (tokenDecimals - USDC_DECIMALS));
         } else if (tokenDecimals < USDC_DECIMALS) {
