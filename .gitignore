@@ -61,6 +61,11 @@ typechain-types/
 # Hardhat Ignition deployments (all chains - document addresses in README)
 ignition/deployments/
 
+# Foundry
+out/
+cache_hardhat/
+broadcast/
+
 # IDEs and editors
 .vscode/
 .history/

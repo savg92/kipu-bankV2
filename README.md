@@ -1,17 +1,33 @@
-## Foundry
+# 🏦 KipuBank V2
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+> Production-grade multi-token vault with Chainlink price oracles and role-based access control
 
-Foundry consists of:
+## Overview
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+**KipuBank V2** is an advanced decentralized vault that supports ETH and ERC-20 token deposits with USD-denominated bank caps enforced via Chainlink price oracles. This project showcases professional Solidity development practices and advanced DeFi patterns.
 
-## Documentation
+### Key Features
 
-https://book.getfoundry.sh/
+- **Multi-Token Support**: Deposit and withdraw ETH and whitelisted ERC-20 tokens
+- **Chainlink Oracle Integration**: Real-time ETH/USD price feeds for accurate valuation
+- **USD-Denominated Accounting**: Bank cap enforced in USD across all supported assets
+- **Role-Based Access Control**: Owner-managed token whitelist and emergency controls
+- **Decimal Normalization**: Automatic handling of 6, 8, and 18 decimal tokens
+- **Advanced Security**: ReentrancyGuard, SafeERC20, CEI pattern, comprehensive error handling
+- **Gas Optimizations**: Storage caching, unchecked arithmetic, immutable variables
+
+## Technology Stack
+
+- **Language**: Solidity ^0.8.24
+- **Framework**: Foundry
+- **Dependencies**: OpenZeppelin Contracts, Chainlink Contracts
+- **Network**: Sepolia Testnet
+
+## Development Status
+
+🚧 **In Development** - Phase 2: Contract Architecture
+
+See [plan.md](./plan.md) for detailed development roadmap.
 
 ## Usage
 
@@ -25,23 +41,6 @@ $ forge build
 
 ```shell
 $ forge test
-```
-
-### Setup (dependencies)
-
-If you prefer to keep the repository lean, `forge-std` is managed by Foundry and can be installed on each developer machine or CI instead of vendoring the library. Run once to install into `lib/`:
-
-```shell
-forge install foundry-rs/forge-std
-```
-
-If you've previously committed `lib/forge-std` and want to stop tracking it in git (keep the local copy but remove it from the repo), run:
-
-```shell
-git rm -r --cached lib/forge-std
-echo "lib/forge-std/" >> .gitignore
-git add .gitignore
-git commit -m "Stop vendoring forge-std; use forge install instead"
 ```
 
 ### Format
