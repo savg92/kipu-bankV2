@@ -66,6 +66,14 @@ out/
 cache_hardhat/
 broadcast/
 
+# Legacy Hardhat Files (not using Hardhat)
+hardhat.config.js
+ignition/
+scripts/
+src/Counter.sol
+test/Counter.t.sol
+script/Counter.s.sol
+
 # IDEs and editors
 .vscode/
 .history/
