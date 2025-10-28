@@ -6,14 +6,6 @@
 
 **KipuBank V2** is an advanced decentralized vault showcasing professional Solidity development. It supports ETH and ERC-20 token deposits with USD-denominated bank caps enforced via Chainlink price oracles, demonstrating production-ready security patterns and architectural best practices.
 
-### 🎯 Project Highlights
-
-- ✅ **100% Exam Compliant** - All 13 mandatory requirements + 8 suggested improvements implemented
-- ✅ **Production-Grade Security** - CEI pattern, ReentrancyGuard, SafeERC20, custom errors only
-- ✅ **Advanced Solidity Features** - Structs, nested mappings, modifiers, immutable variables, unchecked arithmetic
-- ✅ **Fully Tested** - 41/41 tests passing (100% success rate)
-- ✅ **Verified on Sepolia** - Contract verified on Etherscan with complete source code
-
 ### Key Features
 
 - **Multi-Token Support**: Deposit and withdraw ETH and whitelisted ERC-20 tokens
@@ -226,11 +218,6 @@ kipu-bankV2/
 ├── test/
 │   └── KipuBank.t.sol            # Foundry tests (41 tests)
 ├── README.md                      # This file
-├── COMPLIANCE-CHECK.md            # Exam requirements verification
-├── PRD.md                         # Product requirements
-├── DEPLOYMENT.md                  # Deployment details
-├── STATUS.md                      # Project status
-├── plan.md                        # Development roadmap
 └── foundry.toml                   # Foundry configuration
 ```
 
@@ -281,59 +268,3 @@ Test Categories:
 ```
 
 **Verification**: ✅ [Etherscan Verified](https://sepolia.etherscan.io/address/0xe1b858d11bbbd3565a883a83352521765645b19f#code)
-
-## 📋 Design Decisions
-
-### 1. USD-Denominated Bank Cap
-
-**Why**: Prevents volatile ETH price movements from bypassing deposit limits. All values normalized to 6-decimal USDC standard.
-
-### 2. Nested Mappings for Multi-Token Support
-
-**Why**: Efficient per-user, per-token balance tracking. Structure: `user → token → balance`
-
-### 3. Chainlink Price Feeds for USD Valuation
-
-**Why**: Real-time, reliable price data. Eliminates need for centralized oracle.
-
-### 4. Token Whitelist with Owner Control
-
-**Why**: Prevents users from depositing unsupported tokens. Owner can add/remove tokens dynamically.
-
-### 5. Immutable Constructor Parameters
-
-**Why**: Gas-efficient and prevents tampering. Critical limits set at deployment.
-
-### 6. Custom Errors Over Require Strings
-
-**Why**: Gas efficient (saves ~70 gas per error). Better for production contracts.
-
-### 7. Modifiers for Validation Logic
-
-**Why**: DRY principle. Centralized logic for repeated checks (supported token, deposit pause).
-
-## 🎓 Learning Outcomes
-
-This project demonstrates:
-
-- ✅ Advanced Solidity patterns (nested mappings, modifiers, custom errors)
-- ✅ Integration with external libraries (OpenZeppelin, Chainlink)
-- ✅ Production-grade security practices
-- ✅ Gas optimization techniques
-- ✅ Professional documentation and testing
-- ✅ Testnet deployment and verification workflow
-
-## 📞 Support & Resources
-
-- **Chainlink Documentation**: [Price Feeds](https://docs.chain.link/data-feeds/price-feeds)
-- **OpenZeppelin Contracts**: [GitHub](https://github.com/OpenZeppelin/openzeppelin-contracts)
-- **Foundry Book**: [Book](https://book.getfoundry.sh/)
-- **Solidity Docs**: [docs.soliditylang.org](https://docs.soliditylang.org/)
-
-## 📝 License
-
-This project is licensed under the **MIT License** - see LICENSE file for details.
-
-## 👤 Author
-
-**Santiago Valenzuela** - [GitHub](https://github.com/savg92)
