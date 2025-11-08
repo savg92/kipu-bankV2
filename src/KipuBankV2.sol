@@ -257,7 +257,7 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     {
         // Calculate USD value and check bank cap using modifier
         uint256 depositValueUSD = getTokenValueInUSD(token, amount);
-        
+
         // Validate bank cap before proceeding
         if (totalDepositsUSD + depositValueUSD > bankCapUSD) {
             revert BankCapExceeded();
