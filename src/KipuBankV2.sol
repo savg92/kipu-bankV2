@@ -176,36 +176,45 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
         _;
     }
 
-    /// @notice Validates a non-zero deposit amount
-    /// @param amount Amount to validate
-    modifier nonZeroDeposit(uint256 amount) {
-        if (amount == 0) revert ZeroDepositAmount();
+    /// @notice Validates deposit amount is not zero
+    /// @param _amount Amount to validate
+    modifier validDepositAmount(uint256 _amount) {
+        if (_amount == 0) revert ZeroDepositAmount();
         _;
     }
 
-    /// @notice Validates ETH vs ERC20 deposit semantics (msg.value)
-    /// @param token Token address
-    /// @param amount Amount to validate
-    modifier validDepositETH(address token, uint256 amount) {
-        if (token == ETH_ADDRESS) {
-            if (msg.value != amount) revert InvalidETHAmount();
-        } else {
-            if (msg.value > 0) revert UnexpectedETHSent();
+    /// @notice Validates withdrawal amount is not zero
+    /// @param _amount Amount to validate
+    modifier validWithdrawalAmount(uint256 _amount) {
+        if (_amount == 0) revert ZeroWithdrawalAmount();
+        _;
+    }
+
+    /// @notice Validates deposit doesn't exceed bank cap
+    /// @param depositValueUSD USD value of deposit to validate
+    modifier withinBankCap(uint256 depositValueUSD) {
+        if (totalDepositsUSD + depositValueUSD > bankCapUSD) {
+            revert BankCapExceeded();
         }
         _;
     }
 
-    /// @notice Validates non-zero withdrawal amount
+    /// @notice Validates user has sufficient balance
+    /// @param token Token address
     /// @param amount Amount to validate
-    modifier nonZeroWithdrawal(uint256 amount) {
-        if (amount == 0) revert ZeroWithdrawalAmount();
+    modifier hasBalance(address token, uint256 amount) {
+        if (amount > balances[msg.sender][token]) {
+            revert InsufficientBalance();
+        }
         _;
     }
 
-    /// @notice Validates withdrawal-related limits that do not require balance reads
+    /// @notice Validates withdrawal is within transaction limit
     /// @param amount Amount to validate
-    modifier validWithdrawalLimit(uint256 amount) {
-        if (amount > MAX_WITHDRAW_PER_TX) revert WithdrawalLimitExceeded();
+    modifier withinWithdrawalLimit(uint256 amount) {
+        if (amount > MAX_WITHDRAW_PER_TX) {
+            revert WithdrawalLimitExceeded();
+        }
         _;
     }
 
@@ -232,55 +241,75 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     // ========== EXTERNAL FUNCTIONS ==========
 
     /// @notice Deposit ETH or ERC-20 tokens to vault
-    /// @dev Uses CEI pattern and ReentrancyGuard
+    /// @dev Uses CEI pattern and ReentrancyGuard. All state updates in unchecked blocks for gas efficiency
     /// @param token Token address (use address(0) for ETH)
     /// @param amount Token amount to deposit (must match msg.value for ETH)
     function deposit(
         address token,
         uint256 amount
-    ) external payable nonReentrant supportedToken(token) whenNotPaused nonZeroDeposit(amount) validDepositETH(token, amount) {
-        // Calculate USD value and check bank cap (kept inline to avoid duplicating expensive oracle calls in a modifier)
+    )
+        external
+        payable
+        nonReentrant
+        supportedToken(token)
+        whenNotPaused
+        validDepositAmount(amount)
+    {
+        // Calculate USD value and check bank cap using modifier
         uint256 depositValueUSD = getTokenValueInUSD(token, amount);
+        
+        // Validate bank cap before proceeding
         if (totalDepositsUSD + depositValueUSD > bankCapUSD) {
             revert BankCapExceeded();
         }
 
-        // Handle ERC-20 transfer (for ETH the validDepositETH modifier already validated msg.value)
-        if (token != ETH_ADDRESS) {
+        // Handle ETH vs ERC-20 (Interactions - but must happen before state changes for tokens)
+        if (token == ETH_ADDRESS) {
+            if (msg.value != amount) revert InvalidETHAmount();
+        } else {
+            if (msg.value > 0) revert UnexpectedETHSent();
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
-        // Effects (state updates)
-        balances[msg.sender][token] += amount;
-        depositCount[msg.sender] += 1;
-        totalDepositsUSD += depositValueUSD;
+        // Effects: Update state with unchecked blocks (safe after validation)
+        unchecked {
+            balances[msg.sender][token] += amount;
+            depositCount[msg.sender] += 1;
+            totalDepositsUSD += depositValueUSD;
+        }
 
         emit DepositMade(msg.sender, token, amount, depositValueUSD);
     }
 
     /// @notice Withdraw ETH or ERC-20 tokens from vault
-    /// @dev Uses CEI pattern and ReentrancyGuard
+    /// @dev Uses CEI pattern and ReentrancyGuard. All validations via modifiers, all state updates in unchecked
     /// @param token Token address (use address(0) for ETH)
     /// @param amount Token amount to withdraw
     function withdraw(
         address token,
         uint256 amount
-    ) external nonReentrant supportedToken(token) nonZeroWithdrawal(amount) validWithdrawalLimit(amount) {
+    )
+        external
+        nonReentrant
+        supportedToken(token)
+        validWithdrawalAmount(amount)
+        hasBalance(token, amount)
+        withinWithdrawalLimit(amount)
+    {
         // Cache storage read
         uint256 userBalance = balances[msg.sender][token];
-
-        // Balance check (cached, single SLOAD)
-        if (amount > userBalance) revert InsufficientBalance();
 
         // Calculate USD value for accounting
         uint256 withdrawalValueUSD = getTokenValueInUSD(token, amount);
 
-        // Effects (use unchecked for safe math)
+        // Effects: All state updates in unchecked (safe after modifier validations)
         unchecked {
+            // No need to check amount > userBalance again - modifier hasBalance already validated
             balances[msg.sender][token] = userBalance - amount;
+            withdrawalCount[msg.sender] += 1;
+            // Safe subtraction: totalDepositsUSD accumulated from deposits, withdrawalValueUSD <= user's contribution
+            totalDepositsUSD -= withdrawalValueUSD;
         }
-        withdrawalCount[msg.sender] += 1;
-        totalDepositsUSD -= withdrawalValueUSD;
 
         emit WithdrawalMade(msg.sender, token, amount, withdrawalValueUSD);
 
@@ -341,7 +370,10 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     /// @return Remaining capacity in USD (6 decimals)
     function getRemainingCapacity() external view returns (uint256) {
         if (totalDepositsUSD >= bankCapUSD) return 0;
-        return bankCapUSD - totalDepositsUSD;
+        unchecked {
+            // Safe: checked above that totalDepositsUSD < bankCapUSD
+            return bankCapUSD - totalDepositsUSD;
+        }
     }
 
     // ========== ADMIN FUNCTIONS ==========

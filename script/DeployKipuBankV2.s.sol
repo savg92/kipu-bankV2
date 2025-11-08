@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {KipuBankV2} from "../contracts/KipuBank.sol";
+import {KipuBankV2} from "../src/KipuBankV2.sol";
 
 /// @title DeployKipuBankV2
 /// @notice Foundry script to deploy KipuBankV2 to Sepolia testnet
