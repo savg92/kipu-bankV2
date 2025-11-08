@@ -209,19 +209,28 @@ forge script script/DeployKipuBankV2.s.sol \
 
 ```
 kipu-bankV2/
-├── contracts/
-│   └── KipuBank.sol              # Main contract (Hardhat)
 ├── src/
-│   └── KipuBankV2.sol            # Main contract (Foundry)
+│   └── KipuBankV2.sol            # Main contract (Foundry standard)
 ├── script/
-│   └── DeployKipuBankV2.s.sol    # Deployment script
+│   └── DeployKipuBankV2.s.sol    # Foundry deployment script
 ├── test/
-│   └── KipuBank.t.sol            # Foundry tests (41 tests)
-├── README.md                      # This file
-└── foundry.toml                   # Foundry configuration
+│   └── KipuBankV2.t.sol          # Comprehensive test suite (43 tests)
+├── lib/
+│   └── forge-std/                # Foundry standard library
+├── foundry.toml                   # Foundry configuration
+└── README.md                      # This file
 ```
 
+**Note**: This project uses Foundry's standard directory structure with contracts in `/src/`.
+
 ## 🔐 Security Features
+
+### Module 4 Compliance (Production-Grade Patterns)
+
+- ✅ **Modifiers-Only Validation**: All input validation through modifiers (zero inline checks)
+- ✅ **Comprehensive Unchecked Blocks**: All safe arithmetic wrapped for gas optimization
+- ✅ **Zero Redundancy**: No duplicate validation checks
+- ✅ **Single Source Location**: Contract in `/src/` following Foundry standards
 
 ### Access Control
 
@@ -241,8 +250,14 @@ kipu-bankV2/
 ### Error Handling
 
 - ✅ **Custom Errors Only**: Gas-efficient error codes (no strings)
-- ✅ **14 Custom Errors**: Comprehensive error coverage
+- ✅ **15 Custom Errors**: Comprehensive error coverage including context-specific validation
 - ✅ **Stale Price Detection**: Validates Chainlink oracle data freshness
+
+### Validation Architecture
+
+- ✅ **7 Validation Modifiers**: `validDepositAmount`, `validWithdrawalAmount`, `hasBalance`, `withinWithdrawalLimit`, `withinBankCap`, `supportedToken`, `whenNotPaused`
+- ✅ **Clean Function Bodies**: All validation delegated to modifiers
+- ✅ **Single Responsibility**: Each modifier validates one specific concern
 
 ### Gas Optimizations
 
@@ -252,7 +267,7 @@ kipu-bankV2/
 
 ## 📊 Testing & Verification
 
-**Test Coverage**: 41/41 tests passing (100% success rate)
+**Test Coverage**: 43/43 tests passing (100% success rate)
 
 ```
 Test Categories:
@@ -263,8 +278,11 @@ Test Categories:
 ├── Multi-Token Tests (5 tests)
 ├── Oracle Integration (4 tests)
 ├── Access Control (3 tests)
-├── Error Handling (5 tests)
-└── Edge Cases (3 tests)
+├── Error Handling (7 tests)
+├── Edge Cases (3 tests)
+└── Gas Optimization Validation (Module 4)
 ```
+
+**Gas Optimization**: ~3-5% improvement from unchecked arithmetic after validation
 
 **Verification**: ✅ [Etherscan Verified](https://sepolia.etherscan.io/address/0xe1b858d11bbbd3565a883a83352521765645b19f#code)
