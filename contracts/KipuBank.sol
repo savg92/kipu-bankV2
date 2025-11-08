@@ -176,6 +176,39 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
         _;
     }
 
+    /// @notice Validates a non-zero deposit amount
+    /// @param amount Amount to validate
+    modifier nonZeroDeposit(uint256 amount) {
+        if (amount == 0) revert ZeroDepositAmount();
+        _;
+    }
+
+    /// @notice Validates ETH vs ERC20 deposit semantics (msg.value)
+    /// @param token Token address
+    /// @param amount Amount to validate
+    modifier validDepositETH(address token, uint256 amount) {
+        if (token == ETH_ADDRESS) {
+            if (msg.value != amount) revert InvalidETHAmount();
+        } else {
+            if (msg.value > 0) revert UnexpectedETHSent();
+        }
+        _;
+    }
+
+    /// @notice Validates non-zero withdrawal amount
+    /// @param amount Amount to validate
+    modifier nonZeroWithdrawal(uint256 amount) {
+        if (amount == 0) revert ZeroWithdrawalAmount();
+        _;
+    }
+
+    /// @notice Validates withdrawal-related limits that do not require balance reads
+    /// @param amount Amount to validate
+    modifier validWithdrawalLimit(uint256 amount) {
+        if (amount > MAX_WITHDRAW_PER_TX) revert WithdrawalLimitExceeded();
+        _;
+    }
+
     // ========== CONSTRUCTOR ==========
 
     /// @notice Initializes KipuBankV2 with limits and oracle
@@ -205,24 +238,19 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     function deposit(
         address token,
         uint256 amount
-    ) external payable nonReentrant supportedToken(token) whenNotPaused {
-        if (amount == 0) revert ZeroDepositAmount();
-
-        // Calculate USD value and check bank cap
+    ) external payable nonReentrant supportedToken(token) whenNotPaused nonZeroDeposit(amount) validDepositETH(token, amount) {
+        // Calculate USD value and check bank cap (kept inline to avoid duplicating expensive oracle calls in a modifier)
         uint256 depositValueUSD = getTokenValueInUSD(token, amount);
         if (totalDepositsUSD + depositValueUSD > bankCapUSD) {
             revert BankCapExceeded();
         }
 
-        // Handle ETH vs ERC-20
-        if (token == ETH_ADDRESS) {
-            if (msg.value != amount) revert InvalidETHAmount();
-        } else {
-            if (msg.value > 0) revert UnexpectedETHSent();
+        // Handle ERC-20 transfer (for ETH the validDepositETH modifier already validated msg.value)
+        if (token != ETH_ADDRESS) {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
 
-        // Update state (Effects)
+        // Effects (state updates)
         balances[msg.sender][token] += amount;
         depositCount[msg.sender] += 1;
         totalDepositsUSD += depositValueUSD;
@@ -237,14 +265,12 @@ contract KipuBankV2 is Ownable, ReentrancyGuard {
     function withdraw(
         address token,
         uint256 amount
-    ) external nonReentrant supportedToken(token) {
+    ) external nonReentrant supportedToken(token) nonZeroWithdrawal(amount) validWithdrawalLimit(amount) {
         // Cache storage read
         uint256 userBalance = balances[msg.sender][token];
 
-        // Checks
-        if (amount == 0) revert ZeroWithdrawalAmount();
+        // Balance check (cached, single SLOAD)
         if (amount > userBalance) revert InsufficientBalance();
-        if (amount > MAX_WITHDRAW_PER_TX) revert WithdrawalLimitExceeded();
 
         // Calculate USD value for accounting
         uint256 withdrawalValueUSD = getTokenValueInUSD(token, amount);
